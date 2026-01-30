@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Barbearia do Luiz - Web App</title>
 
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -151,6 +156,27 @@
           <img src="https://i.imgur.com/awcNJLq.jpeg" alt="Logo Barbearia" class="w-full h-full object-cover">
         </div>
       </header>
+    </section>
+
+    <!-- Banner Instalar PWA -->
+    <section id="installBox" class="shine-section shine-amber hidden" data-shine-section>
+      <div data-animate class="px-2 flex flex-col gap-3">
+        <div class="flex items-center gap-3">
+          <span class="text-zinc-500 uppercase text-[10px] tracking-[0.3em] font-black italic">Instalar</span>
+          <div class="h-[1px] bg-zinc-800 flex-grow"></div>
+        </div>
+
+        <button id="btnInstall"
+          class="btn-active w-full bg-amber-500 text-black py-3 rounded-2xl font-black transition-all hidden">
+          Instalar app
+        </button>
+
+        <div id="iosHint" class="hidden text-zinc-300 text-[12px] leading-snug">
+          No iPhone: toque em <b>Compartilhar</b> e depois <b>Adicionar à Tela de Início</b>.
+        </div>
+
+        <p id="installStatus" class="text-zinc-400 text-[11px]"></p>
+      </div>
     </section>
 
     <!-- Seção Ações (Whats + Insta) -->
@@ -377,6 +403,88 @@
         document.body.removeChild(ta);
       }
     }
+
+    // ===== Service Worker (PWA) =====
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js");
+      });
+    }
+
+    // ===== Banner "Instalar App" =====
+    let deferredPrompt = null;
+
+    function isIOS() {
+      return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    }
+
+    function isStandalone() {
+      return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    }
+
+    function showInstallBox({ showButton, showIOSHint, statusText }) {
+      const box = document.getElementById("installBox");
+      const btn = document.getElementById("btnInstall");
+      const iosHint = document.getElementById("iosHint");
+      const status = document.getElementById("installStatus");
+
+      box.classList.remove("hidden");
+      btn.classList.toggle("hidden", !showButton);
+      iosHint.classList.toggle("hidden", !showIOSHint);
+      status.textContent = statusText || "";
+    }
+
+    window.addEventListener("load", () => {
+      if (isStandalone()) return;
+
+      if (isIOS()) {
+        showInstallBox({
+          showButton: false,
+          showIOSHint: true,
+          statusText: "Depois de instalar, o app abre sem o navegador."
+        });
+      }
+    });
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+
+      showInstallBox({
+        showButton: true,
+        showIOSHint: false,
+        statusText: "Instale para abrir mais rápido como app."
+      });
+    });
+
+    document.addEventListener("click", async (e) => {
+      if (e.target?.id !== "btnInstall") return;
+      if (!deferredPrompt) return;
+
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+
+      if (choice.outcome === "accepted") {
+        showInstallBox({
+          showButton: false,
+          showIOSHint: false,
+          statusText: "Instalação iniciada ✅"
+        });
+      } else {
+        showInstallBox({
+          showButton: true,
+          showIOSHint: false,
+          statusText: "Você pode instalar quando quiser."
+        });
+      }
+
+      deferredPrompt = null;
+    });
+
+    window.addEventListener("appinstalled", () => {
+      const box = document.getElementById("installBox");
+      if (box) box.classList.add("hidden");
+    });
   </script>
 </body>
 </html>
