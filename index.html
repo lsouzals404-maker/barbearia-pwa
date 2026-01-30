@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Barbearia do Luiz - Web App</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      background-image: url('https://i.imgur.com/ooV3u1C.png');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-color: #000;
+    }
+
+    /* Utilidades para o Carrossel */
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    .snap-x { scroll-snap-type: x mandatory; }
+    .snap-center { scroll-snap-align: center; }
+
+    /* Clique nos botões */
+    .btn-active:active {
+      transform: scale(0.96);
+      box-shadow: 0 0 20px currentColor;
+    }
+
+    /* Galeria */
+    .gallery-img {
+      width: 260px;
+      height: 340px;
+      object-fit: cover;
+      border-radius: 24px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Safe-area (PWA) */
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+      /* Scroll-reactive shine globals */
+      --shine-x: 50%;
+      --shine-y: 22%;
+      --shine-alpha: 0.75;
+    }
+
+    /* ===== Stagger animation ===== */
+    [data-animate] {
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 520ms ease, transform 520ms ease;
+      will-change: opacity, transform;
+    }
+    [data-animate].show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== Shine por seção (reage ao scroll) ===== */
+    .shine-section {
+      position: relative;
+      border-radius: 28px;
+      padding: 10px;
+      margin: -10px; /* expande o brilho sem mudar layout visual */
+    }
+    .shine-section::before {
+      content: "";
+      position: absolute;
+      inset: -36px;
+      pointer-events: none;
+      z-index: -1;
+
+      /* brilho base (cores via vars) */
+      background:
+        radial-gradient(
+          520px 360px at var(--shine-x) var(--shine-y),
+          rgba(var(--shine-rgb, 245 158 11) / calc(0.38 * var(--shine-alpha))),
+          rgba(var(--shine-rgb, 245 158 11) / calc(0.16 * var(--shine-alpha))) 35%,
+          rgba(0 0 0 / 0) 68%
+        ),
+        radial-gradient(
+          420px 300px at calc(var(--shine-x) + 6%) calc(var(--shine-y) + 12%),
+          rgba(255 255 255 / calc(0.14 * var(--shine-alpha))),
+          rgba(0 0 0 / 0) 50%
+        );
+
+      filter: blur(30px);
+      opacity: 0.0;              /* começa apagado */
+      transform: scale(0.98);
+      transition: opacity 420ms ease, transform 420ms ease;
+      will-change: opacity, transform;
+    }
+
+    /* seção ativa (pelo scroll) acende */
+    .shine-section.active::before {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* pulse sincronizado (stagger/entrada) */
+    .shine-section.pulse::before {
+      transform: scale(1.03);
+      filter: blur(34px);
+    }
+
+    /* Cores por seção */
+    .shine-amber { --shine-rgb: 245 158 11; }
+    .shine-green { --shine-rgb: 37 211 102; }
+    .shine-pink  { --shine-rgb: 236 72 153; }
+    .shine-cyan  { --shine-rgb: 34 211 238; }
+    .shine-violet{ --shine-rgb: 168 85 247; }
+
+    /* Para usuários com redução de movimento */
+    @media (prefers-reduced-motion: reduce) {
+      [data-animate] { transition: none; transform: none; opacity: 1; }
+      [data-animate].show { transform: none; }
+      .btn-active:active { transform: none; }
+
+      .shine-section::before {
+        transition: none;
+        opacity: 1;
+        transform: none;
+        filter: blur(28px);
+      }
+      .shine-section.active::before { opacity: 1; }
+      .shine-section.pulse::before { transform: none; }
+    }
+  </style>
+</head>
+
+<body class="text-white font-sans min-h-screen">
+  <!-- Overlay global -->
+  <div class="fixed inset-0 bg-black/60 pointer-events-none z-0"></div>
+
+  <main
+    class="relative z-10 max-w-md mx-auto
+           px-6
+           pt-[calc(24px+var(--safe-top))]
+           pb-[calc(28px+var(--safe-bottom))]
+           min-h-screen flex flex-col gap-6"
+  >
+    <!-- Seção Topo (Logo) -->
+    <section class="shine-section shine-amber" data-shine-section>
+      <header class="flex justify-center pt-2" data-animate>
+        <div class="w-52 h-52 rounded-full overflow-hidden border-4 border-amber-500 shadow-[0_0_40px_rgba(245,158,11,0.3)] transition-transform duration-500 hover:scale-105">
+          <img src="https://i.imgur.com/awcNJLq.jpeg" alt="Logo Barbearia" class="w-full h-full object-cover">
+        </div>
+      </header>
+    </section>
+
+    <!-- Seção Ações (Whats + Insta) -->
+    <section class="shine-section shine-green" data-shine-section>
+      <a data-animate href="https://wa.me/5535998082942" target="_blank"
+         class="btn-active bg-transparent border-2 border-[#25D366] text-[#25D366] flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-lg transition-all">
+        <i class="fab fa-whatsapp text-3xl"></i>
+        <span>Agendar Horário</span>
+      </a>
+    </section>
+
+    <section class="shine-section shine-pink" data-shine-section>
+      <a data-animate href="https://www.instagram.com/luiz.gustavobarbeiro/" target="_blank"
+         class="btn-active bg-transparent border-2 border-pink-500 text-pink-500 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-lg transition-all">
+        <i class="fab fa-instagram text-3xl"></i>
+        <span>Siga no Instagram</span>
+      </a>
+    </section>
+
+    <!-- Seção PIX -->
+    <section class="shine-section shine-cyan" data-shine-section>
+      <div data-animate class="px-12">
+        <button onclick="abrirPix()"
+                class="btn-active w-full bg-transparent border-2 border-cyan-400 text-cyan-400 flex items-center justify-center gap-3 py-3 rounded-2xl font-bold text-sm transition-all">
+          <img src="https://i.imgur.com/Ijj067P.png" alt="Ícone Pix" class="w-5 h-5 object-contain">
+          <span>Pagar com PIX</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Seção Galeria -->
+    <section class="shine-section shine-violet" data-shine-section>
+      <div data-animate>
+        <div class="flex items-center gap-3 mb-5 px-2">
+          <span class="text-zinc-500 uppercase text-[10px] tracking-[0.3em] font-black italic">Nosso Trabalho</span>
+          <div class="h-[1px] bg-zinc-800 flex-grow"></div>
+        </div>
+
+        <div class="flex gap-4 overflow-x-auto hide-scroll snap-x px-2">
+          <img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=500" class="gallery-img snap-center shadow-2xl" alt="Corte masculino 1" loading="lazy">
+          <img src="https://images.unsplash.com/photo-1621605815841-aa897bd07b44?w=500" class="gallery-img snap-center shadow-2xl" alt="Corte masculino 2" loading="lazy">
+          <img src="https://images.unsplash.com/photo-1599351431247-f10b218163e3?w=500" class="gallery-img snap-center shadow-2xl" alt="Corte masculino 3" loading="lazy">
+        </div>
+
+        <p class="text-center text-zinc-600 text-[10px] mt-4 tracking-widest uppercase">← Deslize para ver mais →</p>
+      </div>
+    </section>
+
+    <!-- Seção Mapa -->
+    <section class="shine-section shine-amber" data-shine-section>
+      <div data-animate class="rounded-[2rem] overflow-hidden border-2 border-amber-500/40 h-64 relative shadow-[0_20px_50px_rgba(0,0,0,0.7)] mt-1">
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3701.320443588147!2d-46.5714341!3d-22.0628291!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94c99738f6b0f14d%3A0x6b0f14d6b0f14d!2sAndradas%20-%20MG!5e0!3m2!1spt-BR!2sbr!4v1715000000000!5m2!1spt-BR!2sbr"
+          width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+        ></iframe>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <section class="shine-section shine-amber" data-shine-section>
+      <footer data-animate class="text-center pt-4 pb-2">
+        <p class="text-zinc-500 text-[9px] tracking-[0.4em] font-bold uppercase italic opacity-60">Barbearia do Luiz • Andradas MG</p>
+      </footer>
+    </section>
+  </main>
+
+  <!-- Modal PIX -->
+  <div id="modalPix" class="fixed inset-0 bg-black/95 z-50 hidden flex items-center justify-center p-6 backdrop-blur-xl"
+       onclick="if(event.target.id==='modalPix') fecharPix()">
+    <div class="bg-zinc-900 border border-white/10 text-white rounded-[3rem] p-8 w-full max-w-xs text-center relative shadow-2xl">
+      <button onclick="fecharPix()" aria-label="Fechar"
+              class="absolute -top-14 right-0 text-white text-5xl font-thin leading-none">&times;</button>
+
+      <h3 class="font-black text-xl mb-6 text-amber-500 italic tracking-widest">PAGAMENTO PIX</h3>
+
+      <div class="bg-white p-4 rounded-3xl mb-6 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+        <img src="https://i.imgur.com/SzQM78W.jpeg" alt="QR Code PIX" class="w-full h-auto rounded-xl">
+      </div>
+
+      <button onclick="copiarCodigo()" id="btnCopiar"
+              class="w-full bg-amber-500 text-black py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all btn-active">
+        <i class="fas fa-copy"></i>
+        <span>COPIAR CÓDIGO</span>
+      </button>
+
+      <p id="aviso" class="text-green-500 text-[10px] mt-4 font-bold opacity-0 transition-opacity uppercase tracking-tighter">
+        Copiado! Basta colar no app do banco
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const pixCode = "00020126360014br.gov.bcb.pix0114+55359983968325204000053039865802BR5922LUCAS DANRLEI DE SOUZA6008ANDRADAS62190515BarbeariaDoLuiz63046A79";
+
+    // ===== 1) Scroll-reactive shine (suave, leve) =====
+    (function setupScrollReactiveShine() {
+      let ticking = false;
+
+      function update() {
+        ticking = false;
+
+        const doc = document.documentElement;
+        const scrollTop = doc.scrollTop || document.body.scrollTop || 0;
+        const scrollH = (doc.scrollHeight - doc.clientHeight) || 1;
+        const p = Math.max(0, Math.min(1, scrollTop / scrollH)); // 0..1
+
+        // Move o foco do brilho com o scroll
+        // X oscila levemente, Y desce gradualmente
+        const x = 50 + Math.sin(p * Math.PI * 2) * 8;     // 42..58
+        const y = 18 + p * 42;                            // 18..60
+
+        // Intensidade levemente variável
+        const alpha = 0.70 + (Math.cos(p * Math.PI * 2) * 0.10); // ~0.60..0.80
+
+        doc.style.setProperty("--shine-x", x.toFixed(1) + "%");
+        doc.style.setProperty("--shine-y", y.toFixed(1) + "%");
+        doc.style.setProperty("--shine-alpha", alpha.toFixed(2));
+      }
+
+      window.addEventListener("scroll", () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(update);
+        }
+      }, { passive: true });
+
+      // inicial
+      update();
+    })();
+
+    // ===== 2) Shine diferente por seção + reage ao scroll (ativo conforme viewport) =====
+    const sections = Array.from(document.querySelectorAll("[data-shine-section]"));
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          // ativa a seção mais visível
+          entry.target.classList.add("active");
+        } else {
+          entry.target.classList.remove("active");
+        }
+      });
+    }, {
+      root: null,
+      threshold: [0.25, 0.45, 0.6]
+    });
+
+    sections.forEach(s => io.observe(s));
+
+    // ===== 3) Stagger + sincroniza "pulse" do shine =====
+    window.addEventListener("load", () => {
+      const items = Array.from(document.querySelectorAll("[data-animate]"));
+
+      const baseDelay = 70;   // ms entre itens
+      const startDelay = 90;  // ms inicial
+      const maxDelay = 560;   // trava
+
+      items.forEach((el, i) => {
+        const d = Math.min(startDelay + i * baseDelay, maxDelay);
+        el.style.transitionDelay = d + "ms";
+
+        requestAnimationFrame(() => {
+          el.classList.add("show");
+
+          // pulse na seção que contém o item
+          const parentSection = el.closest("[data-shine-section]");
+          if (parentSection) {
+            // só pulsa quando a seção está ativa (visível)
+            if (parentSection.classList.contains("active")) {
+              parentSection.classList.add("pulse");
+              setTimeout(() => parentSection.classList.remove("pulse"), 420);
+            }
+          }
+        });
+      });
+    });
+
+    // ===== PIX =====
+    function abrirPix() {
+      document.getElementById('modalPix').classList.remove('hidden');
+    }
+
+    function fecharPix() {
+      document.getElementById('modalPix').classList.add('hidden');
+    }
+
+    async function copiarCodigo() {
+      const btn = document.getElementById('btnCopiar');
+      const aviso = document.getElementById('aviso');
+
+      const sucessoUI = () => {
+        btn.classList.remove('bg-amber-500', 'text-black');
+        btn.classList.add('bg-green-600', 'text-white');
+        btn.querySelector('span').innerText = "COPIADO!";
+        aviso.classList.remove('opacity-0');
+
+        setTimeout(() => {
+          btn.classList.remove('bg-green-600', 'text-white');
+          btn.classList.add('bg-amber-500', 'text-black');
+          btn.querySelector('span').innerText = "COPIAR CÓDIGO";
+          aviso.classList.add('opacity-0');
+        }, 2500);
+      };
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(pixCode);
+          sucessoUI();
+          return;
+        }
+      } catch (e) {}
+
+      const ta = document.createElement("textarea");
+      ta.value = pixCode;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+        sucessoUI();
+      } finally {
+        document.body.removeChild(ta);
+      }
+    }
+  </script>
+</body>
+</html>
